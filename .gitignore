@@ -1,0 +1,6 @@
+.Rproj.user
+.Rhistory
+.RData
+.Rbuildignore
+inst/doc
+vignettes/transprob-vignette.html

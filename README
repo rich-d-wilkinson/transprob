@@ -1,0 +1,4 @@
+cmd+shift+D to add new cpp files to namespace.
+Then Build and Reload
+
+Cmd+shift+T to run the (limited tests) in tests/testthat/

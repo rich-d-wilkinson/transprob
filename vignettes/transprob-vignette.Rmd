@@ -1,0 +1,150 @@
+---
+title: "An introduction to transprob"
+author: "Richard Wilkinson"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+This package contains the function transprob which aims to replicate the transprob function from the Financial Toolbox in MATLAB, but with additional functionality.
+
+```{r}
+library(transprob)
+?transprob
+```
+
+Note that the library can be installed from github using
+```{r, eval=FALSE}
+library(devtools)
+install_github('rich-d-wilkinson/transprob')
+```
+
+Alternatively you can download the zip file from https://github.com/rich-d-wilkinson/transprob, navigate to the directory in Rstudio, open the transprob.Rproj file, and then click Build and Reload. To get the documentation you may then need to type
+```{r}
+devtools::document()
+```
+
+The two key functions, transprob and bootstrap, are both minimally documented
+
+```{r}
+?transprob
+?bootstrap
+```
+
+and there are a few tests that can be run to check that the package is working as it should. Note that the output for the default case has been checked against MATLAB.
+
+```{r,eval=FALSE}
+devtools::test()
+```
+
+
+
+
+
+
+
+
+Details
+--------
+
+Lets begin by looking at the financial rating data from MATLAB
+```{r}
+library(transprob)
+head(FinancialRating)
+labels = c('A', 'AA', 'AAA', 'B','BB','BBB','CCC','D')
+round(transprob(FinancialRating, labels,  removeSingleton = FALSE)*100,4)
+```
+
+The MATLAB code agrees with this. 
+
+
+```{r eval=FALSE}
+MATLAB:transprob(data, 'labels', {'A', 'AA', 'AAA','B','BB', 'BBB', 'CCC', 'D'})
+```
+
+```{r, echo=FALSE}
+MATLAB <- read.table('MATLABoutput.csv', sep=',')
+colnames(MATLAB) <- labels
+rownames(MATLAB) <- labels
+round(MATLAB,4)
+```
+
+As in MATLAB, you can specify when the end date is for the calculation, or if this is unspecified, the last inspection date in the data will be used. Note that the date  is assumed to be of the form 20-Nov-2015, but this can be controlled by specifying date_format (see http://www.r-bloggers.com/date-formats-in-r/). See the help pages for full details. If you don't have a C++ compiler installed, you may need to use the R only version by setting Cpp=FALSE.
+
+
+```{r eval=FALSE}
+transprob(FinancialRating, labels, removeSingleton = FALSE)
+transprob(FinancialRating, labels, end_date = '20-Nov-2015',  removeSingleton = FALSE)
+```
+
+The code is super fast as the main functions are coded in C++ (for the 178515 records in the Embankment data, MATLAB takes about 9.5 seconds vs 3.5 seconds in R). There is also an R only implementation that can be used by setting Cpp=FALSE, but this is too slow for large datasets.  
+
+```{r}
+system.time({T1 = transprob(FinancialRating, labels, removeSingleton = FALSE)})
+system.time({T2 = transprob(FinancialRating, labels, removeSingleton = FALSE, Cpp=FALSE)})
+```
+
+
+Differences with MATLAB
+---------------------
+
+
+MATLAB includes all records in the analysis, even if they only have a single record. We may want to exlude these records from the analysis  - this is the default behaviour. 
+
+```{r}
+round(transprob(FinancialRating, labels, removeSingleton = TRUE)*100,3)
+```
+
+We may also only want to include observed periods in the analysis. So for example, if asset 1 was last observed in 2012, but our calculation runs through to 2015 (either because this is the most recent inspection of some asset, or by specification), then we can choose whether to assume the asset stayed in the same state from 2012 to 2015 or not.
+
+
+```{r}
+round(transprob(FinancialRating, labels, removeSingleton = TRUE, ObservedOnly = TRUE)*100,3)
+round(transprob(FinancialRating, labels, removeSingleton = TRUE, 
+                ObservedOnly = FALSE)*100,3) #default
+
+```
+
+Note that removeSingleton=TRUE and ObservedOnly=TRUE is equivalent to removeSingleton=FALSE and ObservedOnly=TRUE.
+
+#### Converting to upper diagonal
+
+There are two options for converting degradation matrices to upper triangular forms only
+
+```{r}
+DegradeOnly(T1, LoadDiag = TRUE)
+DegradeOnly(T1, LoadDiag = FALSE)
+```
+
+LoadDiag=TRUE adds all lower diagonal elements on a row onto the diagonal element. LoadDiag=FALSE sets lower diagonal terms to zero and rescales the rows so that they still add to 1.
+
+
+#### Bootstrapping
+
+We can create bootstrapped parameter estimates using the bootstrap function. nboot specifies the number of bootstrap samples to generate.
+
+```{r}
+out <- bootstrap(FinancialRating, labels,  removeSingleton = FALSE,  ObservedOnly = FALSE, nboot=10)
+lapply(out, function(x) round(x*100,2))
+```
+
+
+Detail
+-------
+
+Suppose we have information on different assets - each of which have been inspected a number of times (with dates recorded), with a rating assigned. 
+
+* Assume all changes of rating only occur at inspection times. This makes the code unsuitable for situations where assets are degrading continuously, but changes in ratings only noted at inspection times. 
+
+Then transprob calculates the transition matrix (for a 1 year period by default, although this can be controlled by setting transInterval) for the continuous time Markov chain.
+
+Notes
+---------
+
+Note that records must be ordered with all observations for a single asset in adjacent rows, ordered chronologically.  The code does not check this and so errors will not be spotted (this is part of the reason it is so much quicker than MATLAB). Note also, that in the package code there is an alternative way of calculating the transition matrix that will allow records to be jumbled, but this is so slow as to be almost unusable for large datasets. To see this code look at the CalcTransOld and CalcTimeOld functions (you'll need to type transprob:::CalcTransOld as these functions are not exported).
+
+
+Note also that if end_date is older than the most recent inspection date in the data, then all observations that occured subsequent to this time are excluded from the analysis. 

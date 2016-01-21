@@ -1,0 +1,21 @@
+Package: transprob
+Type: Package
+Title: A recreation of transprob in Matlab
+Version: 0.1
+Date: 2015-11-19
+Author: Richard Wilkinson
+Maintainer: Richard Wilkinson <r.d.wilkinson@sheffield.ac.uk>
+Description: Estimates the transition matrix of a continuous time Markov chain, when there are multiple different instances of the MC in the data set. The prototypical example is the financial rating (A, AA, AAA,B etc) of a number of companies, with ratings changing at inspection times.
+License: GPL-2
+LazyData: TRUE
+Imports: 
+    dplyr, 
+    expm, 
+    plyr,
+    Rcpp
+RoxygenNote: 5.0.1
+LinkingTo: Rcpp
+Suggests: knitr,
+    rmarkdown,
+    testthat
+VignetteBuilder: knitr
