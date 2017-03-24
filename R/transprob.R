@@ -41,10 +41,15 @@ FormatData <- function(data, labels, date_format="%d-%b-%Y", end_date=NULL, star
   if(!is.null(end_date)){
     end_date = strptime(end_date,format = date_format)
     keep <- end_date>=data$Std_dates
-    return(data[keep,])
+    data2 = data[keep,]
+    if(!is.null(start_date)){ # if we also have a start date
+      start_date = strptime(start_date,format = date_format)
+      keep <- start_date<=data2$Std_dates
+      return(data2[keep,])
+    }else return(data2)
     }
   
-  if(!is.null(start_date)){
+  if(!is.null(start_date)){ # but not end_date
     start_date = strptime(start_date,format = date_format)
     keep <- start_date<=data$Std_dates
     return(data[keep,])
