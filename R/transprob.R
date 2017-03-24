@@ -24,7 +24,7 @@
 
 
 #' @export
-FormatData <- function(data, labels, date_format="%d-%b-%Y", end_date=NULL){
+FormatData <- function(data, labels, date_format="%d-%b-%Y", end_date=NULL, start_date=NULL){
   # data is a data frame consisting of at least three columns
   # Assume first column is ID
   # Second column is Date
@@ -44,6 +44,11 @@ FormatData <- function(data, labels, date_format="%d-%b-%Y", end_date=NULL){
     return(data[keep,])
     }
   
+  if(!is.null(start_date)){
+    start_date = strptime(start_date,format = date_format)
+    keep <- start_date<=data$Std_dates
+    return(data[keep,])
+  }
   
   # swap factor rating for numeric value (1-d), with order determined by labels
   # note fixed=TRUE needed else the expression match assumes regular expression
@@ -223,9 +228,9 @@ CalcQ <- function(Trans, Times){
 #' transprob(FinancialRating, labels, date_format="%d-%b-%Y", removeSingleton = FALSE, ObservedOnly=TRUE)
 #'
 #' @export
-transprob <- function(data, labels, date_format="%d-%b-%Y", end_date=NULL, removeSingleton=TRUE, transInterval=1, ObservedOnly=FALSE, Cpp=TRUE, detail=FALSE){
+transprob <- function(data, labels, date_format="%d-%b-%Y", end_date=NULL, start_date=NULL, removeSingleton=TRUE, transInterval=1, ObservedOnly=FALSE, Cpp=TRUE, detail=FALSE){
 
-  Fdata = FormatData(data=data, labels=labels, date_format, end_date)
+  Fdata = FormatData(data=data, labels=labels, date_format, end_date, start_date)
   if(!is.null(end_date)) end_date = strptime(end_date, date_format) # put date in correct form
   else {
     end_date = max(Fdata$Std_dates)

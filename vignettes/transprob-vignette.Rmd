@@ -78,6 +78,7 @@ As in MATLAB, you can specify when the end date is for the calculation, or if th
 ```{r eval=FALSE}
 transprob(FinancialRating, labels, removeSingleton = FALSE)
 transprob(FinancialRating, labels, end_date = '20-Nov-2015',  removeSingleton = FALSE)
+transprob(FinancialRating, labels, end_date = '20-Nov-2015',  start_date = '29-Dec-1984', removeSingleton = FALSE)
 ```
 
 The code is super fast as the main functions are coded in C++ (for the 178515 records in the Embankment data, MATLAB takes about 9.5 seconds vs 3.5 seconds in R). There is also an R only implementation that can be used by setting Cpp=FALSE, but this is too slow for large datasets.  
